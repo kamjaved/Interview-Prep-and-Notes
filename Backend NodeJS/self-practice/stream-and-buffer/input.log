@@ -1,0 +1,6 @@
+[2024-05-15 10:00:01] INFO: User 123 logged in from 192.168.1.100.
+[2024-05-15 10:00:05] WARN: Failed attempt to access secret resource.
+[2024-05-15 10:00:10] INFO: Data transfer successful to secret destination.
+[2024-05-15 10:00:15] DEBUG: Processing user secret profile.
+[2024-05-15 10:00:20] ERROR: Critical failure near secret database.
+[2024-05-15 10:00:25] INFO: Another line without secret.
