@@ -81,6 +81,17 @@ export const ThemeProvider = ({ children }) => {
 };
 
 export const useTheme = () => useContext(ThemeContext);
+
+// Usage: AnyComponent.jsx
+const SomeComponent = () => {
+	const { theme, toggleTheme } = useTheme(); // called the useTheme custom hooks
+	return (
+		<div>
+			<p>Current theme is: {theme}</p>
+			<button onClick={toggleTheme}>Toggle Theme</button> {/*display the value*/}
+		</div>
+	);
+};
 ```
 
 **Now Step-by-Step Implementation with Data Fetching Example:**

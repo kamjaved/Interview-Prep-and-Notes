@@ -1,4 +1,4 @@
-// Custom hook for debouncing (NOT USED ANYWERE JUST FOR REFRANCING)
+// Custom hook for debouncing (NOT USED ANYWERE JUST FOR REFRANCE )
 import { useState, useEffect } from 'react';
 
 export function useDebounce(value: string, delay: number) {

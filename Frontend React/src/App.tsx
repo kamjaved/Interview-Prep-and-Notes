@@ -1,5 +1,6 @@
 import './App.css';
 import AppContextAPI from './basics/context-api/AppContext';
+import InputValidationAge from './extra-practices/InputValidationAge';
 // import DebouncingUser from './extra-practices/debouncing/Debouncing';
 // import OtpInput from './extra-practices/otp-autofill/OTP';
 // import StarRating from './extra-practices/StarRating';
@@ -21,6 +22,7 @@ function App() {
 			{/* <DebouncingUser /> */}
 
 			<AppContextAPI />
+			<InputValidationAge />
 		</>
 	);
 }
