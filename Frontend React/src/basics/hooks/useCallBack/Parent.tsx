@@ -6,7 +6,7 @@ const Parent = () => {
 	const [label, setLabel] = useState('');
 
 	// Problem:
-	//Even if count changes, and not the function, Child re-renders.
+	//Even if count changes, and not the handleClick function, Child re-renders.
 
 	// Why?
 	// Because on every render of Parent, a new instance of handleClick is created (function is redefined),

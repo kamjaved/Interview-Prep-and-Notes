@@ -4,6 +4,7 @@
 function getBinaryGap(number) {
 	const numToBinaryString = number.toString(2).replace(/0+$/, ''); // it will conver number to binary string and remove trailing zeros
 	const parts = numToBinaryString.split('1');
+	console.log('PARTS', parts);
 	let maxGap = 0;
 
 	for (let i = 1; i < parts.length; i++) {

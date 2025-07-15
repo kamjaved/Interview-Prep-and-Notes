@@ -33,7 +33,7 @@ function Slides({ slides }) {
 				<button
 					data-testid="button-next"
 					className="small"
-					disabled={currentSlideIndex === slides.length - 1} // Same logic as yours
+					disabled={currentSlideIndex === slides.length - 1}
 					onClick={handleOnClickNext}>
 					Next
 				</button>

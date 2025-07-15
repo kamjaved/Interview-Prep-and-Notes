@@ -2,34 +2,32 @@
 
 import 'h8k-components';
 import { useState, useEffect } from 'react';
-import Articles from './Articles';
+import Articles from './components/Articles';
 
 import './App.css';
 
 function App({ articles }) {
-	useEffect(() => {
-		handleMostUpvoted();
-	}, []);
+	const sortByUpvotes = (arr) => {
+		// Create a shallow copy before sorting to avoid mutating the original array
+		return [...arr].sort((a, b) => b.upvotes - a.upvotes); // b - a for descending
+	};
 
-	let sortedArticles = articles.sort((a, b) => b.upvotes - a.upvotes);
-	const [articleState, setArticleState] = useState([...sortedArticles]);
-	//  const [isClicked, setIsClicked]= useState(false)
+	const sortByDate = (arr) => {
+		return [...arr].sort(
+			(a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+		);
+	};
+
+	const [articleState, setArticleState] = useState(() =>
+		sortByUpvotes(articles)
+	);
 
 	const handleMostUpvoted = () => {
-		//  setIsClicked(!isClicked)
-		// Logic for most upvoted articles
-		let sortedArticlesByVote = [...articleState].sort(
-			(a, b) => a.upvotes - b.upvotes
-		);
-		setArticleState(sortedArticlesByVote);
+		setArticleState(sortByUpvotes(articleState)); // Sort the current state
 	};
 
 	const handleMostRecent = () => {
-		// Logic for most recent articles
-		let sortedArticlesByDate = [...articleState].sort(
-			(a, b) => new Date(b.date) - new Date(a.date)
-		);
-		setArticleState(sortedArticlesByDate);
+		setArticleState(sortByDate(articleState)); // Sort the current state
 	};
 
 	return (
