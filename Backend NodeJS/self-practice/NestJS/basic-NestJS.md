@@ -91,6 +91,186 @@ This mock data clearly illustrates the one-to-many relationship: one project can
 
 <br>
 
+## 2.1 WHat if Project and User have many to many relationship
+
+Alright, let's tackle the "many-to-many" relationship between `User` and `Project` entities, where **one user can have multiple projects, and one project can have multiple users.** This is a very common scenario in database design.
+
+### The Scenario: Many-to-Many Relationship
+
+**Analogy:** Think of it like students and courses.
+
+-  One student can be enrolled in many courses.
+-  One course can have many students enrolled.
+
+You wouldn't put a list of all courses directly inside a `students` table record, nor a list of all students directly inside a `courses` table record, because then:
+
+1. You'd have redundant data (course name repeated for every student, student name repeated for every course).
+2. Updating a course name would require updating many student records.
+3. The list itself would be a complex, non-atomic data type within a relational table.
+
+### How Relational Databases (like PostgreSQL) Handle Many-to-Many
+
+You're absolutely right: **in a traditional relational database like PostgreSQL, you generally _cannot_ directly store an array of complex objects or references inside a column in the way you might in a NoSQL database.** While PostgreSQL _does_ have an `ARRAY` data type, it's typically for simple scalar values (like `TEXT[]` or `INTEGER[]`), not for storing complex foreign key relationships to other tables. Trying to store an array of user IDs directly in a project row, or vice versa, would violate good relational database principles and make querying extremely difficult.
+
+**The Solution: A Junction Table (also known as a Join Table or Bridge Table)**
+
+To handle a many-to-many relationship in a relational database, you introduce a **third table**, often called a **junction table** (or join table, bridge table, linking table, associative table).
+
+This junction table contains **foreign keys** that reference the primary keys of the two tables involved in the many-to-many relationship. Each row in the junction table represents a single association between an instance of one entity and an instance of the other.
+
+**Let's illustrate with your `Project` and `User` example:**
+
+**Entities:**
+
+-  `User`
+-  `Project`
+
+**Junction Table:**
+
+-  `UserProject` (or `ProjectUser`, the naming convention is flexible)
+
+### How the Tables Would Look Like (Mock Example):
+
+**1. `users` Table:**
+
+This table holds information about each user.
+
+| id        | firstName | lastName | age | company             |
+| :-------- | :-------- | :------- | :-- | :------------------ |
+| `USER001` | Alice     | Smith    | 30  | Tech Solutions Inc. |
+| `USER002` | Bob       | Johnson  | 25  | Innovate Labs       |
+| `USER003` | Charlie   | Brown    | 35  | Global Corp         |
+
+**2. `projects` Table:**
+
+This table holds information about each project.
+
+| id        | name              |
+| :-------- | :---------------- |
+| `PROJ001` | Quantum Leap App  |
+| `PROJ002` | Nebula Initiative |
+| `PROJ003` | Phoenix Migration |
+
+**3. `user_projects` (Junction Table):**
+
+This table represents the connections between users and projects. Each row signifies that a specific user is associated with a specific project.
+
+| userId    | projectId |
+| :-------- | :-------- | --------------------------------------- |
+| `USER001` | `PROJ001` | (Alice works on Quantum Leap App)       |
+| `USER001` | `PROJ002` | (Alice also works on Nebula Initiative) |
+| `USER002` | `PROJ001` | (Bob works on Quantum Leap App)         |
+| `USER003` | `PROJ002` | (Charlie works on Nebula Initiative)    |
+| `USER002` | `PROJ003` | (Bob also works on Phoenix Migration)   |
+
+**Visualizing the Flow:**
+
+-  **To find all projects Alice (USER001) is working on:**
+
+   -  Go to the `user_projects` table.
+   -  Find all rows where `userId` is `USER001`.
+   -  You'll get `PROJ001` and `PROJ002`.
+   -  Then, look up `PROJ001` and `PROJ002` in the `projects` table to get their names.
+
+-  **To find all users working on "Quantum Leap App" (PROJ001):**
+
+   -  Go to the `user_projects` table.
+   -  Find all rows where `projectId` is `PROJ001`.
+   -  You'll get `USER001` and `USER002`.
+   -  Then, look up `USER001` and `USER002` in the `users` table to get their names.
+
+### How TypeORM Handles This
+
+In TypeORM, you represent a many-to-many relationship using `@ManyToMany` decorators on both sides of the relationship. TypeORM will then automatically create and manage the junction table for you behind the scenes (though you can explicitly define it if you need to add extra columns to the junction table).
+
+Here's how your TypeORM entities would look for this many-to-many scenario:
+
+**`User.entity.ts` (Many-to-Many Side):**
+
+```typescript
+import { Entity, PrimaryColumn, Column, ManyToMany, JoinTable } from 'typeorm';
+import { Project } from '../project/project.entity';
+import { Field, ObjectType, ID } from '@nestjs/graphql'; // Assuming GraphQL decorators
+
+@ObjectType()
+@Entity('users') // Explicitly name your table
+export class User {
+	@Field(() => ID)
+	@PrimaryColumn()
+	id: string;
+
+	@Field()
+	@Column()
+	firstName: string;
+
+	@Field()
+	@Column()
+	lastName: string;
+
+	@Field()
+	@Column()
+	age: number;
+
+	@Field()
+	@Column()
+	company: string;
+
+	// Many users can have many projects
+	@ManyToMany(() => Project, (project) => project.users)
+	@JoinTable({
+		// This decorator is crucial on ONE side of the ManyToMany relationship
+		name: 'user_projects', // Name of the junction table
+		joinColumn: {
+			name: 'userId', // Column name in junction table for User's ID
+			referencedColumnName: 'id', // Column name in User table
+		},
+		inverseJoinColumn: {
+			name: 'projectId', // Column name in junction table for Project's ID
+			referencedColumnName: 'id', // Column name in Project table
+		},
+	})
+	@Field(() => [Project])
+	projects: Project[]; // A user has a list of projects
+}
+```
+
+**`Project.entity.ts` (Many-to-Many Side):**
+
+```typescript
+import { Entity, PrimaryColumn, Column, ManyToMany } from 'typeorm';
+import { User } from 'src/users/user.entity';
+import { Field, ObjectType, ID } from '@nestjs/graphql'; // Assuming GraphQL decorators
+
+@ObjectType()
+@Entity('projects') // Explicitly name your table
+export class Project {
+	@Field(() => ID)
+	@PrimaryColumn()
+	id: string;
+
+	@Field()
+	@Column()
+	name: string;
+
+	// Many projects can have many users
+	@ManyToMany(() => User, (user) => user.projects) // 'user.projects' refers to the property on the User entity
+	@Field(() => [User], { nullable: true })
+	users: User[]; // A project has a list of users
+}
+```
+
+**Key Points in TypeORM:**
+
+-  **`@ManyToMany` on Both Sides:** You need to decorate the relationship property on both `User` and `Project` entities with `@ManyToMany`.
+-  **`@JoinTable` (Only on one side):** You only apply the `@JoinTable` decorator to _one_ of the two sides of the `@ManyToMany` relationship (it's often put on the "owning" side, which typically makes more semantic sense for the relationship, but functionally it works on either). This decorator is what tells TypeORM to create and manage the intermediate junction table.
+   -  `name`: Specifies the name of the junction table (e.g., `user_projects`).
+   -  `joinColumn`: Defines the column in the junction table that references the _current_ entity's primary key (`userId` for `User`).
+   -  `inverseJoinColumn`: Defines the column in the junction table that references the _other_ entity's primary key (`projectId` for `Project`).
+
+This setup is the standard and correct way to model a many-to-many relationship in a relational database, fully supported and streamlined by ORMs like TypeORM.
+
+<br>
+
 ## 3.Basic Refresher Of NestJS
 
 Okay, here's a refresher on NestJS top features compared to Express and raw Node.js, along with popular NestJS CLI commands, suitable for explaining to an interviewer:
