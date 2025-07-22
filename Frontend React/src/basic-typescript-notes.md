@@ -562,6 +562,9 @@ interface CardProps {
 	title: string;
 	// children is implicitly included with React.FC, but explicitly typing it is often clearer
 	// children: React.ReactNode; // You can still add it explicitly if needed
+
+	// like in `ThemeContext.tsx` file we are providing ReactNdde like below
+	// export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children}) => {
 }
 
 const Card: FC<CardProps> = ({ title, children }) => {
